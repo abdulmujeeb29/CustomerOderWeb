@@ -28,3 +28,4 @@ C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\refint\C
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\CustomerOrderWeb.pdb
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\CustomerOrderWeb.genruntimeconfig.cache
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\ref\CustomerOrderWeb.dll
+C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\CustomerOrderWeb.sourcelink.json

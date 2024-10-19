@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text;
 using CustomerOrderWeb.ViewModels;
 using static CustomerOrderWeb.Controllers.AuthenticationController;
+using System.Text.Json.Serialization;
 
 namespace CustomerOrderWeb.Controllers
 {
@@ -56,6 +57,7 @@ namespace CustomerOrderWeb.Controllers
             {
                 // Extract the token from the response
                 var jsonResponse = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(jsonResponse);
                 var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(jsonResponse);  // assuming token is returned as a dict
 
                 if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.Token))
@@ -77,6 +79,7 @@ namespace CustomerOrderWeb.Controllers
         }
         public class TokenResponse
         {
+            [JsonPropertyName("token")]
             public string Token { get; set; }
         }
 
