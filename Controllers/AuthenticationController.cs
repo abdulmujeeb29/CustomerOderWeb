@@ -4,6 +4,8 @@ using System.Text;
 using CustomerOrderWeb.ViewModels;
 using static CustomerOrderWeb.Controllers.AuthenticationController;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authorization;
+using System.Net.Http.Headers;
 
 namespace CustomerOrderWeb.Controllers
 {
@@ -65,6 +67,9 @@ namespace CustomerOrderWeb.Controllers
                     // Store token in session or cookie
                     HttpContext.Session.SetString("JWTToken", tokenResponse.Token); // Store in session
 
+                    // Set the Authorization header for future requests
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResponse.Token);
+
                     TempData["SuccessMessage"] = "Login Succesful";
                     return RedirectToAction("ProtectedPage");
                 }
@@ -85,25 +90,39 @@ namespace CustomerOrderWeb.Controllers
 
         public IActionResult Logout()
         {
-            return RedirectToAction("Index");
+            // Clear the session and redirect to home page
+            HttpContext.Session.Remove("JWTToken");
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            return RedirectToAction("Register");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> LogoutApi()
-        {
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/logout", null);
+        //[HttpPost]
+        //public async Task<IActionResult> LogoutApi()
+        //{
+        //    var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/logout", null);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Clear JWT from session or cookie here
-                return RedirectToAction("Index");
-            }
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        // Clear JWT from session and the HttpClient authorization header
+        //        HttpContext.Session.Remove("JWTToken");
+        //        _httpClient.DefaultRequestHeaders.Authorization = null; // Clear the header
+        //        // Clear JWT from session or cookie here
+        //        return RedirectToAction("Index");
+        //    }
 
-            // Handle logout failure
-            return RedirectToAction("Index");
-        }
+        //    // Handle logout failure
+        //    return RedirectToAction("Index");
+        //}
+
+        
         public IActionResult ProtectedPage()
         {
+            var token = HttpContext.Session.GetString("JWTToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "You must log in to access this page.";
+                return RedirectToAction("Login");
+            }
             return View();
         }
 
