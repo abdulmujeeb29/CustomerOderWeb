@@ -1,7 +1,22 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net.Http.Headers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.LoginPath = "/Authentication/Login";  // Specify your login route here
+    //options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+
 builder.Services.AddHttpClient();
 builder.Services.AddSession(options =>
 {
@@ -11,7 +26,9 @@ builder.Services.AddSession(options =>
 });
 
 // Add authentication services
-
+builder.Services.AddTransient<JwtTokenHandler>();
+builder.Services.AddHttpClient("ApiWithJwt").AddHttpMessageHandler<JwtTokenHandler>();
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 var app = builder.Build();
 
@@ -28,6 +45,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSession();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

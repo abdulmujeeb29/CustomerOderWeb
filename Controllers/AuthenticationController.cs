@@ -6,6 +6,10 @@ using static CustomerOrderWeb.Controllers.AuthenticationController;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 
 namespace CustomerOrderWeb.Controllers
 {
@@ -64,6 +68,16 @@ namespace CustomerOrderWeb.Controllers
 
                 if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.Token))
                 {
+                    // Decode token claims
+                    var handler = new JwtSecurityTokenHandler();
+                    var jwtToken = handler.ReadJwtToken(tokenResponse.Token);
+                    var claims = jwtToken.Claims.ToList();
+                    claims.Add(new Claim(ClaimTypes.Name, user.Email));
+
+                    // Create ClaimsIdentity and authenticate the user
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
                     // Store token in session or cookie
                     HttpContext.Session.SetString("JWTToken", tokenResponse.Token); // Store in session
 
@@ -88,12 +102,13 @@ namespace CustomerOrderWeb.Controllers
             public string Token { get; set; }
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             // Clear the session and redirect to home page
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Remove("JWTToken");
             _httpClient.DefaultRequestHeaders.Authorization = null;
-            return RedirectToAction("Register");
+            return RedirectToAction("Index", "Home");
         }
 
         //[HttpPost]
@@ -114,7 +129,7 @@ namespace CustomerOrderWeb.Controllers
         //    return RedirectToAction("Index");
         //}
 
-        
+        [Authorize]
         public IActionResult ProtectedPage()
         {
             var token = HttpContext.Session.GetString("JWTToken");

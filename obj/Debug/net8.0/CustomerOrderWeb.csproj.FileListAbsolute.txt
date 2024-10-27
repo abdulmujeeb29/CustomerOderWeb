@@ -39,3 +39,4 @@ C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\bin\Debug\net8.0\Microsof
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\CustomerOrderWeb.csproj.AssemblyReference.cache
 C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\obj\Debug\net8.0\Customer.2BCBFD4A.Up2Date
+C:\Users\USER\cs-dev\CustomerOrderWeb\CustomerOrderWeb\bin\Debug\net8.0\System.Security.Permissions.dll
