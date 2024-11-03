@@ -151,28 +151,39 @@ namespace CustomerOrderWeb.Controllers
                 return View(model);
             }
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model.Email), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/forgot-password", jsonContent);
 
             if (response.IsSuccessStatusCode)
             {
                 TempData["SucessMessage"] = "Kindly Check your mail , a reset link has been sent";
-                return RedirectToAction("login", "Authentication");
+                return View(model);
             }
             TempData["ErrorMessage"] = "Failed to sent reset link, an error occured";
             return View(model);
         }
-
-        public IActionResult ResetPassword()
+        [HttpGet]
+        public IActionResult ResetPassword([FromQuery] string token)
         {
-            return View();
+            var model = new ResetPasswordViewModel
+            {
+                Token = token // Pass the token to the view model
+            };
+            return View(model);
         }
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Passwords do not match";
+                //var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                TempData["ErrorMessage"] = "An error occured";
+                return View(model);
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                TempData["ErrorMessage"] = "Passwords do not match.";
                 return View(model);
             }
 
