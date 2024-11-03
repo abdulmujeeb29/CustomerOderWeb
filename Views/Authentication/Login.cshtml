@@ -1,7 +1,6 @@
 ﻿@model CustomerOrderWeb.ViewModels.UserViewModel
 
 @{
-   
     ViewData["Title"] = "Login";
 }
 
@@ -25,6 +24,10 @@
     </div>
     <button type="submit">Login</button>
 </form>
+
+<div>
+    <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot Password?</a>
+</div>
 
 @if (!ViewData.ModelState.IsValid)
 {

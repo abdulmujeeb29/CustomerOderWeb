@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using CustomerOrderApi.Models;
 
 namespace CustomerOrderWeb.Controllers
 {
@@ -89,7 +90,7 @@ namespace CustomerOrderWeb.Controllers
                 }
 
                 // Store token in session or cookie
-                
+
             }
             ModelState.AddModelError(string.Empty, "Invalid login attempt. Please check your credentials and try again.");
             return View(user);
@@ -132,13 +133,63 @@ namespace CustomerOrderWeb.Controllers
         [Authorize]
         public IActionResult ProtectedPage()
         {
-            var token = HttpContext.Session.GetString("JWTToken");
-            if (string.IsNullOrEmpty(token))
-            {
-                TempData["ErrorMessage"] = "You must log in to access this page.";
-                return RedirectToAction("Login");
-            }
+
             return View();
+        }
+
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = " please provide a valid Email";
+                return View(model);
+            }
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/forgot-password", jsonContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SucessMessage"] = "Kindly Check your mail , a reset link has been sent";
+                return RedirectToAction("login", "Authentication");
+            }
+            TempData["ErrorMessage"] = "Failed to sent reset link, an error occured";
+            return View(model);
+        }
+
+        public IActionResult ResetPassword()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Passwords do not match";
+                return View(model);
+            }
+
+            // Create JSON content with the new password only, as the API expects
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
+
+            // Send token as query parameter macthing the api  requirements 
+            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/reset-password?token={model.Token}", jsonContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Your password has been reset successfully. Please log in with your new password.";
+                return RedirectToAction("Login", "Authentication");
+            }
+
+            TempData["ErrorMessage"] = "Failed to reset password. The token may be invalid or expired.";
+            return View(model);
         }
 
     }
