@@ -156,10 +156,10 @@ namespace CustomerOrderWeb.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                TempData["SuccessMessage"] = "Kindly Check your mail , a reset link has been sent";
+                TempData["SuccessMessage"] = " If an account with this email exists, a reset link has been sent.";
                 return View(model);
             }
-            TempData["ErrorMessage"] = "Failed to sent reset link, an error occured";
+            TempData["ErrorMessage"] = "An error occurred. Please try again later.";
             return View(model);
         }
         [HttpGet]

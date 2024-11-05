@@ -17,13 +17,16 @@
     <div>
         <label asp-for="Email">Email</label>
         <input asp-for="Email" type="email" class="form-control" required />
+        <span asp-validation-for="Email" class="text-danger"></span>
     </div>
     <div>
         <label asp-for="Password"> Password</label>
         <input asp-for="Password" type="password" class="form-control" required />
+        <span asp-validation-for="Password" class="text-danger"></span>
     </div>
     <button type="submit">Login</button>
 </form>
+@await Html.PartialAsync("_ValidationScriptsPartial")
 
 <div>
     <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot Password?</a>
