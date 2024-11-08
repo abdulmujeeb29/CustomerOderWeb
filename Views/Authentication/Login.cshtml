@@ -11,6 +11,13 @@
     </div>
 }
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <h2>Login</h2>
 
 <form asp-action="Login" method="post">
@@ -26,6 +33,10 @@
     </div>
     <button type="submit">Login</button>
 </form>
+<a asp-controller="Authentication" asp-action="GoogleLogin" class="btn btn-primary">
+    Login with Google
+</a>
+
 @await Html.PartialAsync("_ValidationScriptsPartial")
 
 <div>

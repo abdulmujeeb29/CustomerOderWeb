@@ -11,6 +11,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using CustomerOrderApi.Models;
+using Microsoft.AspNetCore.Authentication.Google;
+using System.Reflection;
+using System.Net.Http.Json;
 
 namespace CustomerOrderWeb.Controllers
 {
@@ -203,5 +206,66 @@ namespace CustomerOrderWeb.Controllers
             return View(model);
         }
 
+        // Initiates Google login
+        public IActionResult GoogleLogin()
+        {
+            var redirectUrl = Url.Action("GoogleResponse", "Authentication");
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        // Handles the response from Google
+        public async Task<IActionResult> GoogleResponse()
+        {
+            var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            if (!authenticateResult.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Google authentication failed.";
+                return RedirectToAction("Login");
+            }
+
+            // Extract claims from Google login
+            var email = authenticateResult.Principal.FindFirst(ClaimTypes.Email)?.Value;
+            var name = authenticateResult.Principal.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (email != null)
+            {
+                
+                var requestData = new { Email = email };
+                var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+
+                // Send POST request to API
+                var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/check-user", content);
+
+
+                if (response.IsSuccessStatusCode)
+                {
+
+
+                    var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, name),
+                new Claim(ClaimTypes.Email, email),
+                new Claim("LoggedWithGoogle", "true")
+            };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+                    TempData["SuccessMessage"] = "Google Login Successful!";
+                    return RedirectToAction("ProtectedPage");
+                }
+                else
+                {// If user is not found, redirect to login with error
+                    TempData["ErrorMessage"] = "Your email is not registered. Please register first.";
+                    return RedirectToAction("Login");
+                }
+
+            }
+
+            TempData["ErrorMessage"] = "Unable to retrieve your Google account details.";
+            return RedirectToAction("Login");
+        }
     }
 }

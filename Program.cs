@@ -9,18 +9,27 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme; // Set DefaultSignInScheme
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.LoginPath = "/Authentication/Login";  // Specify your login route here
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);   
     //options.AccessDeniedPath = "/Account/AccessDenied";
+})
+.AddGoogle(options =>
+{
+    options.ClientId = "7958666719-dgjo8p6hikja1afv4u0u1fn38i5ojqe4.apps.googleusercontent.com";
+    options.ClientSecret = "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";
+    options.CallbackPath = "/signin-google"; // Google will redirect here after successful login
 });
+
 
 
 builder.Services.AddHttpClient();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout
+    options.IdleTimeout = TimeSpan.FromMinutes(5); // Set session timeout
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
