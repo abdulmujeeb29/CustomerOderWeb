@@ -206,6 +206,34 @@ namespace CustomerOrderWeb.Controllers
             return View(model);
         }
 
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "An error Occured";
+                return View();
+            }
+            // Create JSON content with the new password only, as the API expects
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
+
+            // Send token as query parameter macthing the api  requirements 
+            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/change-password", jsonContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Your password has been changed successfully";
+                return View();
+            }
+
+            TempData["ErrorMessage"] = "Failed to change password. An error occured";
+            return View(model);
+        }
+    
         // Initiates Google login
         public IActionResult GoogleLogin()
         {
