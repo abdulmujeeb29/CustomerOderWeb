@@ -1,3 +1,4 @@
+using CustomerOrderWeb.Helpers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net.Http.Headers;
 
@@ -38,6 +39,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddTransient<JwtTokenHandler>();
 builder.Services.AddHttpClient("ApiWithJwt").AddHttpMessageHandler<JwtTokenHandler>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddScoped<ApiHelper>();
 
 var app = builder.Build();
 

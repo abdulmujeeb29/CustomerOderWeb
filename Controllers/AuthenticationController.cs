@@ -14,17 +14,19 @@ using CustomerOrderApi.Models;
 using Microsoft.AspNetCore.Authentication.Google;
 using System.Reflection;
 using System.Net.Http.Json;
+using CustomerOrderWeb.Helpers;
 
 namespace CustomerOrderWeb.Controllers
 {
     public class AuthenticationController : Controller
     {
+        private readonly ApiHelper _apiHelper;
         private readonly HttpClient _httpClient;
-        private readonly string _apiBaseUrl;
-        public AuthenticationController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        
+        public AuthenticationController(ApiHelper apiHelper, HttpClient httpClient)
         {
-            _httpClient = httpClientFactory.CreateClient();
-            _apiBaseUrl = configuration["ApiSettings:BaseUrl"];
+            _apiHelper = apiHelper;
+            _httpClient = httpClient;
         }
         public IActionResult Index()
         {
@@ -40,8 +42,9 @@ namespace CustomerOrderWeb.Controllers
         public async Task<IActionResult> Register(UserViewModel user)
         {
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/register", jsonContent);
+            //var jsonContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+            //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/register", jsonContent);
+            var response = await _apiHelper.RegisterUserAsync(user);
 
             if (response.IsSuccessStatusCode)
             {
@@ -60,8 +63,9 @@ namespace CustomerOrderWeb.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(UserViewModel user)
         {
-            var jsonContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/login", jsonContent);
+            //var jsonContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+            //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/login", jsonContent);
+            var response = await _apiHelper.LoginUserAsync(user);  
 
             if (response.IsSuccessStatusCode)
             {
@@ -154,8 +158,10 @@ namespace CustomerOrderWeb.Controllers
                 return View(model);
             }
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model.Email), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/forgot-password", jsonContent);
+            //var jsonContent = new StringContent(JsonSerializer.Serialize(model.Email), Encoding.UTF8, "application/json");
+            //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/forgot-password", jsonContent);
+
+            var response = await _apiHelper.ForgotPasswordAsync(model.Email);
 
             if (response.IsSuccessStatusCode)
             {
@@ -191,10 +197,12 @@ namespace CustomerOrderWeb.Controllers
             }
 
             // Create JSON content with the new password only, as the API expects
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
+            //var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
 
-            // Send token as query parameter macthing the api  requirements 
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/reset-password?token={model.Token}", jsonContent);
+            //// Send token as query parameter macthing the api  requirements 
+            //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/reset-password?token={model.Token}", jsonContent);
+
+            var response = await _apiHelper.ResetPasswordAsync(model.NewPassword,model.Token);
 
             if (response.IsSuccessStatusCode)
             {
@@ -205,7 +213,7 @@ namespace CustomerOrderWeb.Controllers
             TempData["ErrorMessage"] = "Failed to reset password. The token may be invalid or expired.";
             return View(model);
         }
-
+        [Authorize]
         public IActionResult ChangePassword()
         {
             return View();
@@ -218,11 +226,28 @@ namespace CustomerOrderWeb.Controllers
                 TempData["ErrorMessage"] = "An error Occured";
                 return View();
             }
+
             // Create JSON content with the new password only, as the API expects
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
+            //var jsonContent = new StringContent(JsonSerializer.Serialize(model.NewPassword), Encoding.UTF8, "application/json");
+
+
+            // get the token that was stored in the session 
+            var token = HttpContext.Session.GetString("JWTToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Your session has expired. Please log in again.";
+                return RedirectToAction("Login");
+            }
+
+            // set the token in the uthorization header 
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
 
             // Send token as query parameter macthing the api  requirements 
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/change-password", jsonContent);
+            //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/change-password", jsonContent);
+
+            var response = await _apiHelper.ChangePasswordAsync(token, model.NewPassword);
 
             if (response.IsSuccessStatusCode)
             {
@@ -260,23 +285,24 @@ namespace CustomerOrderWeb.Controllers
             if (email != null)
             {
                 
-                var requestData = new { Email = email };
-                var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+                //var requestData = new { Email = email };
+                //var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
 
-                // Send POST request to API
-                var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/check-user", content);
+                //// Send POST request to API
+                //var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/Auth/check-user", content);
 
+                var response = await _apiHelper.CheckGoogleUserAsync(email);
 
                 if (response.IsSuccessStatusCode)
                 {
 
 
                     var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, name),
-                new Claim(ClaimTypes.Email, email),
-                new Claim("LoggedWithGoogle", "true")
-            };
+                    {
+                        new Claim(ClaimTypes.Name, name),
+                        new Claim(ClaimTypes.Email, email),
+                        new Claim("LoggedWithGoogle", "true")
+                    };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
